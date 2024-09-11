@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+
+  <style>
+    * {
+  box-sizing: border-box;
+}
+
+main {
+  display: flex;
+  gap: 10px;
+}
+
+.controls {
+  width: 100%;
+  padding:  2px 5px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.editor {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.repl {
+  width: 100%;
+  border: 1px solid black;
+  border-radius: 10px;
+}
+  </style>
+  
+  <script type="module" defer>
+    import { transform } from "https://esm.sh/sucrase@3.34.0"
+
+let worker = null
+
+const createScript = (code) => `
+  console.log = (numberLine, ...params)  => {
+    const data = {
+      type: "Log",
+      data: { numberLine, params }
+    }
+    self.postMessage(data)
+  } 
+
+  ${code}
+`
+
+const addLogLineNumber = script => script
+  .split("\n")
+  .map((line, index) => {
+    if (!line.includes("console.log(")) return line
+    return String(line)
+      .replace("(console.log)", "((...params) => console.log(...params))")
+      .replace("console.log(", `console.log(${index + 1}, `)
+  })
+  .join("\n")
+
+const execute = (code, logFn) => {
+  const script = createScript(addLogLineNumber(code))
+  const blob = new Blob([script], { type: "text/javascript" })
+  const url = URL.createObjectURL(blob)
+  
+  worker = new Worker(url, { type: "module" })
+
+  worker.addEventListener("message", (e) => {
+    const message = e.data
+    if (message.type === "Log") {
+      const { numberLine, params } = message.data
+      const content = [
+          `<b>Line ${numberLine}:</b>`, 
+          ...params.map(param => JSON.stringify(param, null, 1))
+      ]
+      logFn(content)
+    }
+  })
+}
+
+const stopWorker = () => {
+  if(!worker) return
+  worker.terminate()
+  worker = null
+}
+
+const $editor = document.querySelector("textarea")
+const $btnRun = document.querySelector("#run")
+const $btnReset = document.querySelector("#reset")
+const $btnStop = document.querySelector("#stop")
+const $selectLanguage = document.querySelector("#language")
+const $repl = document.querySelector(".repl")
+
+const reset = () => $repl.innerHTML = ``
+
+
+$btnReset.addEventListener("click", () => {
+  $editor.value = ""
+  reset()
+})
+
+$btnStop.addEventListener("click", stopWorker)
+
+$btnRun.addEventListener("click", () => {
+  let code = $editor.value
+  stopWorker()
+  reset()
+  if($selectLanguage.value === "ts"){
+    code = transform(code, {transforms: ["typescript"]}).code
+  }
+  execute(code, addContentRepl)
+})
+
+
+function addContentRepl(content){
+  $repl.innerHTML += `<p>${content.join(" ")}</p>`
+}
+  </script>
+</head>
+<body>
+  <main>
+  <section class="editor">
+    <textarea cols="45" rows="20"></textarea>
+    <div class="controls">
+      <select id="language">
+        <option value="js">JS</option>
+        <option value="ts">TS</option>
+      </select>
+      <div>
+        <button id="run">
+          Run
+        </button>
+          <button id="reset">
+          Reset
+        </button>
+          <button id="stop">
+          Stop
+        </button>
+      </div>
+    </div>
+  </section>
+  <section class="repl"></section>
+</main>
+</body>
+</html>
