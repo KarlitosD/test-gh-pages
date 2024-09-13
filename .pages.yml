@@ -1,5 +1,19 @@
 media: media
 content:
+  - name: data
+    label: Data
+    type: collection
+    path: 'data'
+    view:
+      fields: [ title ]
+    fields:
+      - name: title
+        label: Title
+        type: string
+      - name: body
+        label: Body
+        type: rich-text
+        
   - name: posts
     label: Posts
     type: collection
