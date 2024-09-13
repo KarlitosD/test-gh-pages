@@ -1,9 +1,9 @@
 media: media
 content:
-  - name: data
-    label: Data
+  - name: dodo
+    label: Dodo
     type: collection
-    path: 'data'
+    path: 'dodo'
     view:
       fields: [ title ]
     fields:
