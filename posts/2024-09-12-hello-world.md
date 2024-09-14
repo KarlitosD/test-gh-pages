@@ -3,4 +3,4 @@ published: true
 date: 2024-09-11
 title: Hello world
 ---
-Lorem ipsum
+Lorem _ipsum_
