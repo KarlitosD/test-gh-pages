@@ -46,4 +46,17 @@ content:
         label: Website description
         type: string
         description: Will be provused for any page with no description.
+  - name: MultiImage
+    label: Multiples imagenes
+    path: src/_data/imagenes.json
+    type: file
+    fields:
+      - name: title
+        label: Titulo
+        type: string
+      - name: images
+        label: Imagenes
+        type: image
+        list: true
+        description: Imagenes
         
